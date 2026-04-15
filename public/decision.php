@@ -28,7 +28,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         flash('err', 'Invalid week.');
         redirect('decision.php');
     }
+    $pickAction = $_POST['pick_action'] ?? 'save';
     $rowEntry = (int) ($_POST['row_pick_entry'] ?? 0);
+    if ($pickAction === 'clear') {
+        if ($rowEntry <= 0) {
+            flash('err', 'Invalid request.');
+            redirect('decision.php?week=' . $wid . '&sort=' . urlencode($sortPost));
+        }
+        $validEntry = false;
+        foreach ($entries as $e) {
+            if ((int) $e['id'] === $rowEntry) {
+                $validEntry = true;
+                break;
+            }
+        }
+        if (!$validEntry) {
+            flash('err', 'Invalid entry.');
+            redirect('decision.php?week=' . $wid . '&sort=' . urlencode($sortPost));
+        }
+        if (!$survivor->canEditPick($rowEntry, $weekPost)) {
+            flash('err', 'That entry cannot be changed for this week.');
+        } else {
+            $pickRepo->deletePick($rowEntry, $wid);
+            flash('ok', 'Pick cleared.');
+        }
+        redirect('decision.php?week=' . $wid . '&sort=' . urlencode($sortPost));
+    }
     $rowTeam = (int) ($_POST['row_pick_team'] ?? 0);
     if ($rowEntry <= 0 || $rowTeam <= 0) {
         flash('err', 'Invalid pick request.');

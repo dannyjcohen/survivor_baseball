@@ -53,9 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $field = 'team_' . $eid;
         $tid = isset($_POST[$field]) ? (int) $_POST[$field] : 0;
         if ($tid <= 0) {
-            flash('err', 'Select a team for ' . $e['label'] . '.');
-            $ok = false;
-            break;
+            continue;
         }
         $teamRow = $teamRepo->findById($tid);
         if ($teamRow === null) {
@@ -79,6 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $tid = (int) ($_POST['team_' . $eid] ?? 0);
             if ($tid > 0) {
                 $pickRepo->savePick($eid, $wid, $tid);
+            } else {
+                $pickRepo->deletePick($eid, $wid);
             }
         }
         flash('ok', 'Picks saved.');

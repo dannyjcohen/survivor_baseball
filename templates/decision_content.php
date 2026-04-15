@@ -326,6 +326,22 @@ declare(strict_types=1);
 
                                             <span class="pick-current <?= h($tagClass) ?>">✓ <?= h($e['label']) ?></span>
 
+                                            <form method="post" class="inline-pick-form pick-clear-form" action="<?= h(app_url('decision.php')) ?>">
+
+                                                <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
+
+                                                <input type="hidden" name="pool_week_id" value="<?= (int) $week['id'] ?>">
+
+                                                <input type="hidden" name="sort" value="<?= h($sort) ?>">
+
+                                                <input type="hidden" name="pick_action" value="clear">
+
+                                                <input type="hidden" name="row_pick_entry" value="<?= $eid ?>">
+
+                                                <button type="submit" class="btn btn-sm btn-clear-pick">Clear</button>
+
+                                            </form>
+
                                         <?php elseif ($blocked): ?>
 
                                             <span class="muted"><?= h($e['label']) ?>: prior use</span>

@@ -64,6 +64,12 @@ final class PickRepository
         $st->execute([$entryId, $poolWeekId, $teamId, $now, $now]);
     }
 
+    public function deletePick(int $entryId, int $poolWeekId): void
+    {
+        $st = $this->db->prepare('DELETE FROM picks WHERE entry_id = ? AND pool_week_id = ?');
+        $st->execute([$entryId, $poolWeekId]);
+    }
+
     /** @return list<array<string,mixed>> */
     public function allForWeek(int $poolWeekId): array
     {

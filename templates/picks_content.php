@@ -24,8 +24,8 @@ declare(strict_types=1);
                     <p><strong><?= $cur ? h($cur['city'] . ' ' . $cur['team_name']) : '—' ?></strong></p>
                 <?php else: ?>
                     <label for="team_<?= $eid ?>">Team</label>
-                    <select name="team_<?= $eid ?>" id="team_<?= $eid ?>" required>
-                        <option value="">— Select —</option>
+                    <select name="team_<?= $eid ?>" id="team_<?= $eid ?>">
+                        <option value="">— No pick / clear —</option>
                         <?php foreach ($teams as $t):
                             $tid = (int) $t['id'];
                             $dis = in_array($tid, $forbidden, true);

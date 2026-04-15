@@ -253,6 +253,18 @@ form.picks select { width: 100%; max-width: 320px; padding: 0.4rem; }
 .btn-pick { background: var(--card); color: var(--link); border-color: var(--link); }
 .btn-pick:hover { background: #eef6fc; }
 .inline-pick-form { display: inline; margin: 0; }
+.pick-clear-form { margin-left: 0.35rem; vertical-align: middle; }
+.btn-clear-pick {
+  padding: 0.15rem 0.45rem;
+  font-size: 0.68rem;
+  color: var(--muted);
+  border-color: var(--border);
+  background: transparent;
+}
+.btn-clear-pick:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
 .row-pick-actions { margin-top: 0.4rem; padding-top: 0.35rem; border-top: 1px solid var(--border); }
 .row-pick-actions__line { margin-bottom: 0.2rem; line-height: 1.35; }
 .row-pick-actions__line:last-child { margin-bottom: 0; }
