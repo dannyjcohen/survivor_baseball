@@ -2,6 +2,7 @@
 declare(strict_types=1);
 $title = $title ?? 'MLB Survivor Pool';
 $active = $active ?? '';
+$main_class = $main_class ?? 'wrap main';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -21,11 +22,12 @@ $active = $active ?? '';
                 <a href="<?= h(app_url('decision.php')) ?>" class="<?= $active === 'decision' ? 'active' : '' ?>">Decision Helper</a>
                 <a href="<?= h(app_url('history.php')) ?>" class="<?= $active === 'history' ? 'active' : '' ?>">History</a>
                 <a href="<?= h(app_url('daily.php')) ?>" class="<?= $active === 'daily' ? 'active' : '' ?>">Daily</a>
+                <a href="<?= h(app_url('watch.php')) ?>" class="<?= $active === 'watch' ? 'active' : '' ?>">Multi-watch</a>
                 <a href="<?= h(app_url('admin.php')) ?>" class="<?= $active === 'admin' ? 'active' : '' ?>">Admin</a>
             </nav>
         </div>
     </header>
-    <main class="wrap main">
+    <main class="<?= h($main_class) ?>">
         <?php if (!empty($flash_ok)): ?>
             <p class="flash flash-ok"><?= h($flash_ok) ?></p>
         <?php endif; ?>
