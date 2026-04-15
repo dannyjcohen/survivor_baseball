@@ -69,6 +69,8 @@ declare(strict_types=1);
 
 <p><strong>Bookmark / cron URL</strong> (replace <code>YOUR_SECRET</code> with the value from <code>DAILY_SYNC_KEY</code> in <code>.env</code>; omit <code>&amp;key=</code> if the key is empty):</p>
 <p class="muted"><code><?= h(app_url('daily.php?run=1&key=YOUR_SECRET')) ?></code></p>
+<p><strong>JSON API</strong> (same sync, responds with <code>application/json</code>; use for monitors or cron that expect a machine-readable result):</p>
+<p class="muted"><code><?= h(app_url('daily_json.php?run=1&key=YOUR_SECRET')) ?></code></p>
 
 <form id="sync-form" method="post" action="<?= h(app_url('daily.php')) ?>" class="card" style="margin-top:1rem;">
     <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">

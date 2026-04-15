@@ -55,7 +55,7 @@ The app reads **https://statsapi.mlb.com/api/v1/** (no API key). Implementation:
 
 - **Admin → Import / refresh schedule** — replaces that pool week’s rows with regular-season games for Mon–Sun (`gameType=R`), mapped by `officialDate` to `pool_weeks`.
 - **Refresh scores / results** and **probable pitchers** — same schedule feed; upserts by `gamePk` (`external_game_id`). Probable starters for **both** teams are stored; **season W–L and ERA** (regular season, `gameType=R`) are fetched from the Stats API during sync and cached in `games.home_pitcher_stats_line` / `away_pitcher_stats_line`. Set **`MLB_SEASON_YEAR`** in `.env` if the calendar year differs from the season you want (e.g. early spring). MLB does not expose a simple “league rank” in the same call; ERA is shown as a quick quality signal.
-- **Daily** (`public/daily.php`) — bookmark or cron: pulls **yesterday + today** in `APP_TIMEZONE`, upserts into whichever pool week each `officialDate` belongs to. Optional `DAILY_SYNC_KEY` in `.env`; then use `daily.php?run=1&key=YOUR_SECRET` or the form.
+- **Daily** (`public/daily.php`) — bookmark or cron: pulls **yesterday + today** in `APP_TIMEZONE`, upserts into whichever pool week each `officialDate` belongs to. Optional `DAILY_SYNC_KEY` in `.env`; then use `daily.php?run=1&key=YOUR_SECRET` or the form. **`public/daily_json.php`** runs the same sync and returns JSON (`ok`, `range`, `lines`, totals) for API-style monitoring; omit `&key=` when `DAILY_SYNC_KEY` is empty.
 
 PHP needs outbound HTTP (`allow_url_fopen=1` or equivalent for `file_get_contents` on URLs).
 

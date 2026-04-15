@@ -10,18 +10,6 @@ $logRepo = new ApiSyncLogRepository($pdo);
 $syncRunner = new DailySyncRunner($weekRepo, $gameRepo, $api, $logRepo);
 $metaRepo = new AppMetaRepository($pdo);
 
-/**
- * True if sync is allowed (open locally, or key matches DAILY_SYNC_KEY).
- */
-function daily_sync_allowed(): bool
-{
-    if (DAILY_SYNC_KEY === '') {
-        return true;
-    }
-    $k = (string) ($_GET['key'] ?? $_POST['key'] ?? '');
-    return hash_equals(DAILY_SYNC_KEY, $k);
-}
-
 $syncResult = null;
 $syncError = null;
 

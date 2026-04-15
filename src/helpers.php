@@ -34,6 +34,16 @@ function csrf_verify(?string $token): bool
         && hash_equals($_SESSION['_csrf'], $token);
 }
 
+/** True when daily sync is allowed over HTTP (no key configured, or ?key= / POST key matches DAILY_SYNC_KEY). */
+function daily_sync_allowed(): bool
+{
+    if (DAILY_SYNC_KEY === '') {
+        return true;
+    }
+    $k = (string) ($_GET['key'] ?? $_POST['key'] ?? '');
+    return hash_equals(DAILY_SYNC_KEY, $k);
+}
+
 function redirect(string $path): void
 {
     header('Location: ' . app_url($path));
