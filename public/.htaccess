@@ -1,0 +1,13 @@
+# Optional: allow clean URLs later. Each page is a direct .php file.
+
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>
+
+# Disable browser cache for PHP/HTML. Nested Header+FilesMatch inside one IfModule
+# can cause HTTP 500 on SiteGround/LiteSpeed — keep FilesMatch at top level.
+<FilesMatch "\.(php|html|htm)$">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    </IfModule>
+</FilesMatch>

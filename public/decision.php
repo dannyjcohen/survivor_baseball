@@ -1,0 +1,136 @@
+<?php
+declare(strict_types=1);
+require_once dirname(__DIR__) . '/src/bootstrap.php';
+
+$pdo = Database::pdo();
+$weekRepo = new WeekRepository($pdo);
+$pickRepo = new PickRepository($pdo);
+$gameRepo = new GameRepository($pdo);
+$teamRepo = new TeamRepository($pdo);
+$entryRepo = new EntryRepository($pdo);
+$schedule = new ScheduleService($gameRepo, $teamRepo);
+$survivor = new SurvivorService($gameRepo, $pickRepo, $weekRepo);
+$entries = $entryRepo->all();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $sortPost = $_POST['sort'] ?? 'alpha';
+    if (!in_array($sortPost, ['alpha', 'games_desc', 'home_desc', 'ease_desc'], true)) {
+        $sortPost = 'alpha';
+    }
+    if (!csrf_verify($_POST['csrf'] ?? null)) {
+        flash('err', 'Invalid session token. Try again.');
+        $wid = (int) ($_POST['pool_week_id'] ?? 0);
+        redirect('decision.php' . ($wid > 0 ? '?week=' . $wid . '&sort=' . urlencode($sortPost) : ''));
+    }
+    $wid = (int) ($_POST['pool_week_id'] ?? 0);
+    $weekPost = $weekRepo->findById($wid);
+    if ($weekPost === null) {
+        flash('err', 'Invalid week.');
+        redirect('decision.php');
+    }
+    $rowEntry = (int) ($_POST['row_pick_entry'] ?? 0);
+    $rowTeam = (int) ($_POST['row_pick_team'] ?? 0);
+    if ($rowEntry <= 0 || $rowTeam <= 0) {
+        flash('err', 'Invalid pick request.');
+        redirect('decision.php?week=' . $wid . '&sort=' . urlencode($sortPost));
+    }
+    $validEntry = false;
+    foreach ($entries as $e) {
+        if ((int) $e['id'] === $rowEntry) {
+            $validEntry = true;
+            break;
+        }
+    }
+    if (!$validEntry) {
+        flash('err', 'Invalid entry.');
+        redirect('decision.php?week=' . $wid . '&sort=' . urlencode($sortPost));
+    }
+    if (!$survivor->canEditPick($rowEntry, $weekPost)) {
+        flash('err', 'That entry cannot be changed for this week.');
+    } else {
+        $teamRow = $teamRepo->findById($rowTeam);
+        if ($teamRow === null) {
+            flash('err', 'Invalid team.');
+        } else {
+            $forbidden = $pickRepo->usedTeamIdsExcludingWeek($rowEntry, $wid);
+            $cur = $pickRepo->findForEntryWeek($rowEntry, $wid);
+            $isCurrent = $cur !== null && (int) $cur['team_id'] === $rowTeam;
+            if (in_array($rowTeam, $forbidden, true) && !$isCurrent) {
+                flash('err', 'That team cannot be used for this entry (already used in a prior week).');
+            } else {
+                $pickRepo->savePick($rowEntry, $wid, $rowTeam);
+                flash('ok', 'Pick saved.');
+            }
+        }
+    }
+    redirect('decision.php?week=' . $wid . '&sort=' . urlencode($sortPost));
+}
+
+$requestedWeekId = isset($_GET['week']) ? (int) $_GET['week'] : null;
+$week = null;
+if ($requestedWeekId !== null) {
+    $week = $weekRepo->findById($requestedWeekId);
+}
+if ($week === null) {
+    $week = $weekRepo->resolveWeekForUi();
+}
+
+$sort = $_GET['sort'] ?? 'alpha';
+if (!in_array($sort, ['alpha', 'games_desc', 'home_desc', 'ease_desc'], true)) {
+    $sort = 'alpha';
+}
+
+$used1 = isset($entries[0]) ? $pickRepo->usedTeamIdsList((int) $entries[0]['id']) : [];
+$used2 = isset($entries[1]) ? $pickRepo->usedTeamIdsList((int) $entries[1]['id']) : [];
+
+$forbiddenByEntry = [];
+$picksData = [];
+if ($week !== null) {
+    foreach ($entries as $e) {
+        $eid = (int) $e['id'];
+        $forbiddenByEntry[$eid] = $pickRepo->usedTeamIdsExcludingWeek($eid, (int) $week['id']);
+        $picksData[$eid] = $pickRepo->findForEntryWeek($eid, (int) $week['id']);
+    }
+}
+
+$grid = [];
+$cols = [];
+$oddsLookup = [];
+$oddsSvc = null;
+$oddsErr = null;
+$oddsCacheNote = null;
+if ($week !== null) {
+    $grid = $schedule->buildTeamWeekGrid((int) $week['id'], $week, $used1, $used2);
+    $grid = $schedule->sortGrid($grid, $sort);
+    foreach ($grid as &$gRow) {
+        $gRow['scenario'] = $survivor->analyzePick(0, $week, ['team_id' => (int) $gRow['team_id']], true);
+    }
+    unset($gRow);
+    $grid = decision_grid_pinned_picks_first($grid, $entries, $picksData);
+    $cols = $schedule->weekDayColumns($week);
+    if (ODDS_API_KEY !== '') {
+        try {
+            $cacheRepo = new OddsCacheRepository($pdo);
+            $oddsSvc = new OddsService($cacheRepo, $teamRepo);
+            $meta = $oddsSvc->getCacheMeta();
+            $oddsCacheNote = $meta;
+            $oddsLookup = $oddsSvc->buildLookupForWeek($week, false);
+        } catch (Throwable $e) {
+            $oddsErr = $e->getMessage();
+        }
+    }
+}
+
+$weeks = $weekRepo->allOrdered();
+/** Pool week containing “today” — vivid row colors only when the viewed week matches this. */
+$weekUiCurrent = $weekRepo->resolveWeekForUi();
+
+$staleGamesCount = $gameRepo->countPastGamesNotFinal();
+
+$title = 'Decision Helper';
+$active = 'decision';
+$flash_ok = flash('ok');
+$flash_err = flash('err');
+$extra_scripts = '<script src="' . h(app_url('js/app.js')) . '"></script>';
+$template_body = dirname(__DIR__) . '/templates/decision_content.php';
+include dirname(__DIR__) . '/templates/layout.php';
