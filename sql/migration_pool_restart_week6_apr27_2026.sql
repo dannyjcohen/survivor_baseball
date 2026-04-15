@@ -30,3 +30,5 @@ UPDATE pool_weeks SET week_label = 'Week 26 (Sep 14 – Sep 20)' WHERE week_star
 UPDATE pool_weeks SET week_label = 'Week 27 (Sep 21 – Sep 27)' WHERE week_start_local = '2026-09-21';
 UPDATE pool_weeks SET week_label = 'Week 28 (Sep 28 – Oct 4)' WHERE week_start_local = '2026-09-28';
 UPDATE pool_weeks SET week_label = 'Week 29 (Oct 5 – Oct 11)' WHERE week_start_local = '2026-10-05';
+
+UPDATE pool_weeks SET status = IF(week_start_local = '2026-04-27', 'active', 'upcoming');

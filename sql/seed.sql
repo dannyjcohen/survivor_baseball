@@ -1,4 +1,4 @@
--- Seed: MLB teams (30), 2 entries, pool weeks from 2026-03-30, sample games for week 1
+-- Seed: MLB teams (30), 2 entries, pool weeks 6–29 from 2026-04-27
 SET NAMES utf8mb4;
 
 INSERT INTO teams (mlb_id, city, name, abbreviation, league, division) VALUES
