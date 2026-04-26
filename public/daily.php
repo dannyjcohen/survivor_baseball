@@ -5,9 +5,10 @@ require_once dirname(__DIR__) . '/src/bootstrap.php';
 $pdo = Database::pdo();
 $weekRepo = new WeekRepository($pdo);
 $gameRepo = new GameRepository($pdo);
+$teamRepo = new TeamRepository($pdo);
 $api = new MlbApiClient($pdo);
 $logRepo = new ApiSyncLogRepository($pdo);
-$syncRunner = new DailySyncRunner($weekRepo, $gameRepo, $api, $logRepo);
+$syncRunner = new DailySyncRunner($weekRepo, $gameRepo, $api, $logRepo, $teamRepo);
 $metaRepo = new AppMetaRepository($pdo);
 
 $syncResult = null;

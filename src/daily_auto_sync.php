@@ -36,9 +36,10 @@ function survivor_auto_daily_sync_try(): void
 
             $weekRepo = new WeekRepository($pdo);
             $gameRepo = new GameRepository($pdo);
+            $teamRepo = new TeamRepository($pdo);
             $api = new MlbApiClient($pdo);
             $logRepo = new ApiSyncLogRepository($pdo);
-            $runner = new DailySyncRunner($weekRepo, $gameRepo, $api, $logRepo);
+            $runner = new DailySyncRunner($weekRepo, $gameRepo, $api, $logRepo, $teamRepo);
             $runner->syncYesterdayToday('daily_auto');
             $meta->set('daily_auto_sync_date', $today);
         } finally {

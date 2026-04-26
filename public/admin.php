@@ -5,6 +5,7 @@ require_once dirname(__DIR__) . '/src/bootstrap.php';
 $pdo = Database::pdo();
 $weekRepo = new WeekRepository($pdo);
 $gameRepo = new GameRepository($pdo);
+$teamRepo = new TeamRepository($pdo);
 $api = new MlbApiClient($pdo);
 $logRepo = new ApiSyncLogRepository($pdo);
 
@@ -23,7 +24,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 redirect('admin.php');
             }
             $cacheRepo = new OddsCacheRepository($pdo);
-            $teamRepo = new TeamRepository($pdo);
             $oddsSvc = new OddsService($cacheRepo, $teamRepo);
             $oddsSvc->refreshFromApi();
             $logRepo->log('odds', 'ok', 'The Odds API cache refreshed (manual).');
@@ -41,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $deleted = $gameRepo->deleteGamesForWeek($wid);
                 $rows = $api->fetchWeekSchedule($wid, $weekRepo);
                 $n = $gameRepo->upsertGames($wid, $rows);
+                $teamRepo->refreshSeasonRecordsFromGameRows($rows);
                 $totalGames += $n;
                 $weekCount++;
                 $details[] = $w['week_label'] . ": {$n} games (removed {$deleted} old)";
@@ -60,16 +61,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $deleted = $gameRepo->deleteGamesForWeek($wid);
             $rows = $api->fetchWeekSchedule($wid, $weekRepo);
             $n = $gameRepo->upsertGames($wid, $rows);
+            $teamRepo->refreshSeasonRecordsFromGameRows($rows);
             $logRepo->log('schedule', 'ok', "Removed $deleted prior rows; upserted $n games for week $wid (MLB Stats API).");
             flash('ok', "Schedule refreshed ($n games).");
         } elseif ($action === 'results') {
             $rows = $api->fetchWeekResults($wid, $weekRepo);
             $n = $gameRepo->upsertGames($wid, $rows);
+            $teamRepo->refreshSeasonRecordsFromGameRows($rows);
             $logRepo->log('results', 'ok', "Upserted $n games with scores for week $wid (MLB Stats API).");
             flash('ok', "Scores/results refreshed ($n rows).");
         } elseif ($action === 'probables') {
             $rows = $api->fetchWeekProbables($wid, $weekRepo);
             $n = $gameRepo->upsertGames($wid, $rows);
+            $teamRepo->refreshSeasonRecordsFromGameRows($rows);
             $logRepo->log('probables', 'ok', "Upserted $n games with probables for week $wid.");
             flash('ok', "Probable pitchers refreshed ($n rows).");
         } else {
@@ -87,7 +91,6 @@ $logs = $logRepo->recent(25);
 $oddsMeta = ['expires_at' => null, 'updated_at' => null, 'valid' => false];
 if (ODDS_API_KEY !== '') {
     $cacheRepo = new OddsCacheRepository($pdo);
-    $teamRepo = new TeamRepository($pdo);
     $oddsSvc = new OddsService($cacheRepo, $teamRepo);
     $oddsMeta = $oddsSvc->getCacheMeta();
 }

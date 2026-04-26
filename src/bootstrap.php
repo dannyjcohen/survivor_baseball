@@ -16,6 +16,7 @@ require_once __DIR__ . '/EntryRepository.php';
 require_once __DIR__ . '/ApiSyncLogRepository.php';
 require_once __DIR__ . '/AppMetaRepository.php';
 require_once __DIR__ . '/OddsCacheRepository.php';
+require_once __DIR__ . '/DecisionHiddenTeamRepository.php';
 require_once __DIR__ . '/services/MlbApiClient.php';
 require_once __DIR__ . '/services/DailySyncRunner.php';
 require_once __DIR__ . '/daily_auto_sync.php';

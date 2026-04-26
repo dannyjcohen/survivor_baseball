@@ -7,6 +7,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS odds_cache;
 DROP TABLE IF EXISTS app_meta;
 DROP TABLE IF EXISTS api_sync_log;
+DROP TABLE IF EXISTS decision_week_hidden_teams;
 DROP TABLE IF EXISTS picks;
 DROP TABLE IF EXISTS games;
 DROP TABLE IF EXISTS pool_weeks;
@@ -23,6 +24,8 @@ CREATE TABLE teams (
   abbreviation VARCHAR(5) NOT NULL,
   league ENUM('AL','NL') NOT NULL,
   division VARCHAR(10) NOT NULL,
+  season_wins INT UNSIGNED NULL COMMENT 'MLB regular-season wins snapshot',
+  season_losses INT UNSIGNED NULL COMMENT 'MLB regular-season losses snapshot',
   UNIQUE KEY uq_mlb_id (mlb_id),
   UNIQUE KEY uq_abbr (abbreviation)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -57,6 +60,16 @@ CREATE TABLE picks (
   CONSTRAINT fk_picks_entry FOREIGN KEY (entry_id) REFERENCES entries(id) ON DELETE CASCADE,
   CONSTRAINT fk_picks_week FOREIGN KEY (pool_week_id) REFERENCES pool_weeks(id) ON DELETE CASCADE,
   CONSTRAINT fk_picks_team FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE decision_week_hidden_teams (
+  pool_week_id INT UNSIGNED NOT NULL,
+  team_id INT UNSIGNED NOT NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (pool_week_id, team_id),
+  KEY idx_week (pool_week_id),
+  CONSTRAINT fk_dwh_week FOREIGN KEY (pool_week_id) REFERENCES pool_weeks(id) ON DELETE CASCADE,
+  CONSTRAINT fk_dwh_team FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE games (

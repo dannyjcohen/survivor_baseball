@@ -265,6 +265,53 @@ form.picks select { width: 100%; max-width: 320px; padding: 0.4rem; }
   color: var(--text);
   border-color: var(--muted);
 }
+.decision-team-tools { margin-top: 0.35rem; }
+.btn-hide-team {
+  color: var(--muted);
+  border-color: var(--border);
+  background: #fafbfc;
+  font-size: 0.68rem;
+}
+.btn-hide-team:hover {
+  color: var(--text);
+  border-color: var(--muted);
+  background: #fff;
+}
+.decision-hidden-panel {
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  font-size: 0.88rem;
+}
+.decision-hidden-panel summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.decision-hidden-note { margin: 0.5rem 0 0.35rem; font-size: 0.82rem; }
+.decision-hidden-list {
+  margin: 0.35rem 0 0;
+  padding-left: 1.15rem;
+  list-style: disc;
+}
+.decision-hidden-list__item {
+  margin: 0.25rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+.decision-restore-team {
+  font-size: 0.68rem;
+  padding: 0.12rem 0.45rem;
+  color: var(--link);
+  border-color: var(--link);
+  background: #fff;
+}
+.decision-restore-team:hover {
+  background: #eef6fc;
+}
 .row-pick-actions { margin-top: 0.4rem; padding-top: 0.35rem; border-top: 1px solid var(--border); }
 .row-pick-actions__line { margin-bottom: 0.2rem; line-height: 1.35; }
 .row-pick-actions__line:last-child { margin-bottom: 0; }

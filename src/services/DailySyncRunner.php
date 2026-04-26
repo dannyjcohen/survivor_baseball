@@ -8,6 +8,7 @@ final class DailySyncRunner
         private GameRepository $gameRepo,
         private MlbApiClient $api,
         private ApiSyncLogRepository $logRepo,
+        private TeamRepository $teamRepo,
     ) {}
 
     /**
@@ -20,6 +21,7 @@ final class DailySyncRunner
         $yesterday = $now->modify('-1 day')->format('Y-m-d');
         $today = $now->format('Y-m-d');
         $rows = $this->api->fetchScheduleRowsForDateRange($yesterday, $today, $this->weekRepo);
+        $this->teamRepo->refreshSeasonRecordsFromGameRows($rows);
         $byWeek = [];
         foreach ($rows as $r) {
             $wid = (int) $r['pool_week_id'];

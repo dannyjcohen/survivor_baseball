@@ -186,6 +186,8 @@ final class MlbApiClient
         $awayProb = $this->pitcherName($ap);
         $homeProbId = $this->pitcherId($hp);
         $awayProbId = $this->pitcherId($ap);
+        $homeRec = $this->parseLeagueRecordFromGameSide($game['teams']['home'] ?? []);
+        $awayRec = $this->parseLeagueRecordFromGameSide($game['teams']['away'] ?? []);
         return [
             'pool_week_id' => $wid,
             'external_game_id' => $gamePk,
@@ -200,6 +202,28 @@ final class MlbApiClient
             'away_probable_pitcher' => $awayProb,
             'home_probable_pitcher_id' => $homeProbId,
             'away_probable_pitcher_id' => $awayProbId,
+            'home_season_wins' => $homeRec['wins'],
+            'home_season_losses' => $homeRec['losses'],
+            'away_season_wins' => $awayRec['wins'],
+            'away_season_losses' => $awayRec['losses'],
+        ];
+    }
+
+    /**
+     * @param array<string,mixed> $side teams.home or teams.away from schedule JSON
+     * @return array{wins:?int, losses:?int}
+     */
+    private function parseLeagueRecordFromGameSide(array $side): array
+    {
+        $lr = $side['leagueRecord'] ?? null;
+        if (!is_array($lr)) {
+            return ['wins' => null, 'losses' => null];
+        }
+        $w = $lr['wins'] ?? null;
+        $l = $lr['losses'] ?? null;
+        return [
+            'wins' => is_numeric($w) ? (int) $w : null,
+            'losses' => is_numeric($l) ? (int) $l : null,
         ];
     }
 

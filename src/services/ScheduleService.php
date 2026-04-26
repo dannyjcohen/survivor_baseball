@@ -74,6 +74,7 @@ final class ScheduleService
                     'away' => $gameCount - $homeCount,
                     'ease' => $this->placeholderEase($homeCount, $gameCount),
                 ],
+                'opponent_week' => $this->summarizeOpponentWeek($tid, $cells, $teamMap),
                 'used_entry1' => in_array($tid, $used1, true),
                 'used_entry2' => in_array($tid, $used2, true),
             ];
@@ -90,6 +91,57 @@ final class ScheduleService
             return 0.0;
         }
         return round(($homeGames / $totalGames) * 0.5 + 0.25, 3);
+    }
+
+    /**
+     * @param array<string, list<array<string,mixed>>> $cells date (Y-m-d) => games
+     * @param array<int, array<string,mixed>> $teamMap
+     * @return array{
+     *   combined_w:?int,
+     *   combined_l:?int,
+     *   games:int,
+     *   games_with_opp_record:int,
+     *   matchups:list<array{abbr:string, w:?int, l:?int, at:bool}>
+     * }
+     */
+    private function summarizeOpponentWeek(int $teamId, array $cells, array $teamMap): array
+    {
+        $combinedW = 0;
+        $combinedL = 0;
+        $gamesWithOppRec = 0;
+        $games = 0;
+        $matchups = [];
+        foreach ($cells as $cellGames) {
+            foreach ($cellGames as $g) {
+                $games++;
+                $isHome = (int) $g['home_team_id'] === $teamId;
+                $oid = $isHome ? (int) $g['away_team_id'] : (int) $g['home_team_id'];
+                $abbr = $isHome ? (string) ($g['away_abbr'] ?? '') : (string) ($g['home_abbr'] ?? '');
+                $ot = $teamMap[$oid] ?? null;
+                $w = null;
+                $l = null;
+                if (
+                    $ot !== null
+                    && isset($ot['season_wins'], $ot['season_losses'])
+                    && $ot['season_wins'] !== null
+                    && $ot['season_losses'] !== null
+                ) {
+                    $w = (int) $ot['season_wins'];
+                    $l = (int) $ot['season_losses'];
+                    $combinedW += $w;
+                    $combinedL += $l;
+                    $gamesWithOppRec++;
+                }
+                $matchups[] = ['abbr' => $abbr, 'w' => $w, 'l' => $l, 'at' => !$isHome];
+            }
+        }
+        return [
+            'combined_w' => $gamesWithOppRec > 0 ? $combinedW : null,
+            'combined_l' => $gamesWithOppRec > 0 ? $combinedL : null,
+            'games' => $games,
+            'games_with_opp_record' => $gamesWithOppRec,
+            'matchups' => $matchups,
+        ];
     }
 
     /**

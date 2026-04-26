@@ -109,6 +109,56 @@ declare(strict_types=1);
 
     </div>
 
+    <details class="decision-hidden-panel" id="decision-hidden-teams">
+
+        <summary>Teams hidden for this week <span class="muted"><?= $hiddenTeamsPanel === [] ? '(none)' : '(' . count($hiddenTeamsPanel) . ')' ?></span></summary>
+
+        <p class="muted decision-hidden-note">Hide teams you are ruling out for this week only. They disappear from the table until someone restores them here. Everyone with this link sees the same list (saved in the database).</p>
+
+        <?php if ($hiddenTeamsPanel === []): ?>
+
+            <p class="muted" style="margin:0.35rem 0 0;">No teams hidden for this week.</p>
+
+        <?php else: ?>
+
+            <ul class="decision-hidden-list">
+
+                <?php foreach ($hiddenTeamsPanel as $hp):
+
+                    $hid = (int) $hp['team_id'];
+
+                    ?>
+
+                    <li class="decision-hidden-list__item">
+
+                        <span><?= h($hp['label']) ?></span>
+
+                        <form method="post" class="inline-pick-form decision-restore-form" action="<?= h(app_url('decision.php')) ?>">
+
+                            <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
+
+                            <input type="hidden" name="pool_week_id" value="<?= (int) $week['id'] ?>">
+
+                            <input type="hidden" name="sort" value="<?= h($sort) ?>">
+
+                            <input type="hidden" name="decision_action" value="show_team">
+
+                            <input type="hidden" name="team_id" value="<?= $hid ?>">
+
+                            <button type="submit" class="btn btn-sm decision-restore-team">Show in list</button>
+
+                        </form>
+
+                    </li>
+
+                <?php endforeach; ?>
+
+            </ul>
+
+        <?php endif; ?>
+
+    </details>
+
     <p class="decision-row-legend muted">
 
         Row highlight (when the week dropdown matches the <strong>current pool week</strong><?php if ($weekUiCurrent !== null): ?> — <strong><?= h($weekUiCurrent['week_label']) ?></strong><?php endif; ?>):
@@ -216,6 +266,8 @@ declare(strict_types=1);
 
                         data-row="1"
 
+                        data-team-id="<?= $tid ?>"
+
                         data-used1="<?= $row['used_entry1'] ? '1' : '0' ?>"
 
                         data-used2="<?= $row['used_entry2'] ? '1' : '0' ?>">
@@ -286,15 +338,125 @@ declare(strict_types=1);
 
                             <?php endif; ?>
 
-                            <div class="muted">
+                            <?php
 
-                                G: <?= (int) $row['stats']['games'] ?>
+                            $seasonW = $t['season_wins'] ?? null;
 
-                                · H/A: <?= (int) $row['stats']['home'] ?>/<?= (int) $row['stats']['away'] ?>
+                            $seasonL = $t['season_losses'] ?? null;
 
-                                · Ease*: <?= h((string) $row['stats']['ease']) ?>
+                            $owk = $row['opponent_week'] ?? null;
+
+                            ?>
+
+                            <div class="muted decision-team-records" style="font-size:0.85rem;margin-top:0.25rem;line-height:1.4;">
+
+                                <?php if ($seasonW !== null && $seasonL !== null): ?>
+
+                                    <div><strong>Season</strong> <?= (int) $seasonW ?>–<?= (int) $seasonL ?></div>
+
+                                <?php else: ?>
+
+                                    <div title="Run Admin → schedule/results/probables or daily sync after applying sql/migration_team_season_records.sql"><strong>Season</strong> <span class="muted">—</span></div>
+
+                                <?php endif; ?>
+
+                                <div>
+                                    <strong>G/H-A</strong> <?= (int) $row['stats']['games'] ?> · <?= (int) $row['stats']['home'] ?>/<?= (int) $row['stats']['away'] ?>
+                                </div>
+
+                                <?php if (is_array($owk) && (int) ($owk['games'] ?? 0) > 0): ?>
+
+                                    <div style="border-top:1px solid #cfd6df;margin:0.25rem 0;"></div>
+
+                                    <?php if ($owk['combined_w'] !== null && $owk['combined_l'] !== null && (int) ($owk['games_with_opp_record'] ?? 0) > 0): ?>
+
+                                        <?php
+
+                                        $nOppRec = (int) $owk['games_with_opp_record'];
+
+                                        $nOppAll = (int) $owk['games'];
+
+                                        ?>
+
+                                        <div><strong>Opp (this week)</strong> <?= (int) $owk['combined_w'] ?>–<?= (int) $owk['combined_l'] ?>
+
+                                            <span class="muted"><?php if ($nOppRec === $nOppAll): ?>(<?= $nOppAll ?> matchup<?= $nOppAll === 1 ? '' : 's' ?>)<?php else: ?>(<?= $nOppRec ?>/<?= $nOppAll ?> with foe W–L)<?php endif; ?></span></div>
+
+                                    <?php else: ?>
+
+                                        <div><strong>Opp (this week)</strong> <span class="muted" title="Opponent W–L appear after teams are seen in an MLB schedule sync.">—</span></div>
+
+                                    <?php endif; ?>
+
+                                    <?php
+
+                                    $bits = [];
+
+                                    foreach ($owk['matchups'] ?? [] as $m) {
+
+                                        $pfx = !empty($m['at']) ? '@' : 'vs';
+
+                                        $ab = (string) ($m['abbr'] ?? '');
+
+                                        if ($ab === '') {
+
+                                            continue;
+
+                                        }
+
+                                        if (isset($m['w'], $m['l']) && $m['w'] !== null && $m['l'] !== null) {
+
+                                            $bits[] = $pfx . ' ' . $ab . ' ' . (int) $m['w'] . '–' . (int) $m['l'];
+
+                                        } else {
+
+                                            $bits[] = $pfx . ' ' . $ab;
+
+                                        }
+
+                                    }
+
+                                    if ($bits !== []):
+
+                                    ?>
+
+                                        <div class="muted" style="font-size:0.8rem;"><?= h(implode(' · ', $bits)) ?></div>
+
+                                    <?php endif; ?>
+
+                                <?php endif; ?>
 
                             </div>
+
+                            <div class="muted">
+
+                                Ease*: <?= h((string) $row['stats']['ease']) ?>
+
+                            </div>
+
+                            <?php if (!$isPick1 && !$isPick2): ?>
+
+                                <div class="decision-team-tools">
+
+                                    <form method="post" class="inline-pick-form decision-hide-form" action="<?= h(app_url('decision.php')) ?>">
+
+                                        <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
+
+                                        <input type="hidden" name="pool_week_id" value="<?= (int) $week['id'] ?>">
+
+                                        <input type="hidden" name="sort" value="<?= h($sort) ?>">
+
+                                        <input type="hidden" name="decision_action" value="hide_team">
+
+                                        <input type="hidden" name="team_id" value="<?= $tid ?>">
+
+                                        <button type="submit" class="btn btn-sm btn-hide-team" title="Remove this team from the list for this week (restore from the section above)">Hide for this week</button>
+
+                                    </form>
+
+                                </div>
+
+                            <?php endif; ?>
 
                             <div class="row-pick-actions">
 

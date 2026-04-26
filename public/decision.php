@@ -8,6 +8,7 @@ $pickRepo = new PickRepository($pdo);
 $gameRepo = new GameRepository($pdo);
 $teamRepo = new TeamRepository($pdo);
 $entryRepo = new EntryRepository($pdo);
+$decisionHiddenRepo = new DecisionHiddenTeamRepository($pdo);
 $schedule = new ScheduleService($gameRepo, $teamRepo);
 $survivor = new SurvivorService($gameRepo, $pickRepo, $weekRepo);
 $entries = $entryRepo->all();
@@ -27,6 +28,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($weekPost === null) {
         flash('err', 'Invalid week.');
         redirect('decision.php');
+    }
+    $decisionAction = (string) ($_POST['decision_action'] ?? '');
+    if ($decisionAction !== '') {
+        if (!in_array($decisionAction, ['hide_team', 'show_team'], true)) {
+            flash('err', 'Invalid action.');
+            redirect('decision.php?week=' . $wid . '&sort=' . urlencode($sortPost));
+        }
+        $teamAct = (int) ($_POST['team_id'] ?? 0);
+        if ($teamAct <= 0) {
+            flash('err', 'Invalid team.');
+            redirect('decision.php?week=' . $wid . '&sort=' . urlencode($sortPost));
+        }
+        if ($teamRepo->findById($teamAct) === null) {
+            flash('err', 'Invalid team.');
+            redirect('decision.php?week=' . $wid . '&sort=' . urlencode($sortPost));
+        }
+        if ($decisionAction === 'hide_team') {
+            foreach ($entries as $e) {
+                $p = $pickRepo->findForEntryWeek((int) $e['id'], $wid);
+                if ($p !== null && (int) $p['team_id'] === $teamAct) {
+                    flash('err', 'Cannot hide a team you already picked this week. Clear the pick first.');
+                    redirect('decision.php?week=' . $wid . '&sort=' . urlencode($sortPost));
+                }
+            }
+            $decisionHiddenRepo->add($wid, $teamAct);
+            flash('ok', 'Team hidden for this week.');
+        } else {
+            $decisionHiddenRepo->remove($wid, $teamAct);
+            flash('ok', 'Team restored to the list.');
+        }
+        redirect('decision.php?week=' . $wid . '&sort=' . urlencode($sortPost));
     }
     $pickAction = $_POST['pick_action'] ?? 'save';
     $rowEntry = (int) ($_POST['row_pick_entry'] ?? 0);
@@ -124,6 +156,8 @@ $oddsLookup = [];
 $oddsSvc = null;
 $oddsErr = null;
 $oddsCacheNote = null;
+/** @var list<array{team_id:int,label:string}> */
+$hiddenTeamsPanel = [];
 if ($week !== null) {
     $grid = $schedule->buildTeamWeekGrid((int) $week['id'], $week, $used1, $used2);
     $grid = $schedule->sortGrid($grid, $sort);
@@ -132,6 +166,30 @@ if ($week !== null) {
     }
     unset($gRow);
     $grid = decision_grid_pinned_picks_first($grid, $entries, $picksData);
+    $hiddenTeamIds = $decisionHiddenRepo->teamIdsForWeek((int) $week['id']);
+    $pickTeamIds = [];
+    foreach ($picksData as $p) {
+        if ($p !== null) {
+            $pickTeamIds[] = (int) $p['team_id'];
+        }
+    }
+    $grid = array_values(array_filter($grid, static function (array $row) use ($hiddenTeamIds, $pickTeamIds): bool {
+        $tid = (int) $row['team_id'];
+        if (in_array($tid, $pickTeamIds, true)) {
+            return true;
+        }
+        return !in_array($tid, $hiddenTeamIds, true);
+    }));
+    foreach ($hiddenTeamIds as $hid) {
+        $tr = $teamRepo->findById($hid);
+        if ($tr !== null) {
+            $hiddenTeamsPanel[] = [
+                'team_id' => $hid,
+                'label' => (string) $tr['abbreviation'] . ' · ' . (string) $tr['city'],
+            ];
+        }
+    }
+    usort($hiddenTeamsPanel, static fn (array $a, array $b): int => strcmp($a['label'], $b['label']));
     $cols = $schedule->weekDayColumns($week);
     if (ODDS_API_KEY !== '') {
         try {

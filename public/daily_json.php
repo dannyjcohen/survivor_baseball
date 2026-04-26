@@ -20,9 +20,10 @@ if (!daily_sync_allowed()) {
 $pdo = Database::pdo();
 $weekRepo = new WeekRepository($pdo);
 $gameRepo = new GameRepository($pdo);
+$teamRepo = new TeamRepository($pdo);
 $api = new MlbApiClient($pdo);
 $logRepo = new ApiSyncLogRepository($pdo);
-$syncRunner = new DailySyncRunner($weekRepo, $gameRepo, $api, $logRepo);
+$syncRunner = new DailySyncRunner($weekRepo, $gameRepo, $api, $logRepo, $teamRepo);
 
 try {
     $syncResult = $syncRunner->syncYesterdayToday('daily');
